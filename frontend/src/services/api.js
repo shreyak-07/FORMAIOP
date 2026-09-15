@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Vite environment variable read karega, fallback Render backend URL rahega
+const API_BASE = import.meta.env.VITE_API_BASE_URL 
+  ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api`
+  : 'https://formaiop.onrender.com/api';
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
