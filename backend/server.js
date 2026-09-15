@@ -14,18 +14,29 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS setup
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+// Dynamic CORS Setup: Allows all Vercel deployments, localhost, & custom CORS_ORIGIN
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
-  .map((x) => x.trim());
+  .map((x) => x.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Check if origin matches localhost, allowed list, or any vercel.app domain
+      const isAllowed =
+        origin.includes('localhost') ||
+        origin.endsWith('.vercel.app') ||
+        allowedOrigins.includes(origin);
+
+      if (isAllowed) {
         return callback(null, true);
       }
-      return callback(null, false); // Avoid throwing direct Error object
+      
+      return callback(null, false);
     },
     credentials: true,
   })
@@ -34,7 +45,7 @@ app.use(
 // Body Parser
 app.use(express.json({ limit: '1mb' }));
 
-// Rate Limiter Setup (Separated for clarity)
+// Rate Limiter Setup
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
